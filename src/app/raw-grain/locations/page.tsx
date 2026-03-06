@@ -38,8 +38,10 @@ interface Location {
   name: string;
   admin_name: string;
   crop_type: string;
-  grain_quality: string;
+  impurity_grade: string;
   grain_weight: number;
+  temperature: number;
+  humidity: number;
   remarks: string;
   created_at: string;
 }
@@ -55,8 +57,10 @@ export default function LocationsPage() {
   const [formData, setFormData] = useState({
     name: "",
     admin_name: "",
-    grain_quality: "一级",
+    impurity_grade: "一级",
     grain_weight: "",
+    temperature: "",
+    humidity: "",
     remarks: ""
   });
 
@@ -96,8 +100,10 @@ export default function LocationsPage() {
             name: formData.name,
             admin_name: formData.admin_name,
             crop_type: crop,
-            grain_quality: formData.grain_quality,
+            impurity_grade: formData.impurity_grade,
             grain_weight: parseFloat(formData.grain_weight) || 0,
+            temperature: parseFloat(formData.temperature) || 0,
+            humidity: parseFloat(formData.humidity) || 0,
             remarks: formData.remarks
           }
         ]);
@@ -109,8 +115,10 @@ export default function LocationsPage() {
       setFormData({
         name: "",
         admin_name: "",
-        grain_quality: "一级",
+        impurity_grade: "一级",
         grain_weight: "",
+        temperature: "",
+        humidity: "",
         remarks: ""
       });
     } catch (error) {
@@ -174,24 +182,54 @@ export default function LocationsPage() {
                   />
                 </div>
                 <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="quality" className="text-right">
-                    质量等级
+                  <Label htmlFor="impurity" className="text-right">
+                    杂质等级
                   </Label>
                   <div className="col-span-3">
                     <Select 
-                      value={formData.grain_quality} 
-                      onValueChange={(value) => setFormData({ ...formData, grain_quality: value })}
+                      value={formData.impurity_grade} 
+                      onValueChange={(value) => setFormData({ ...formData, impurity_grade: value })}
                     >
                       <SelectTrigger>
                         <SelectValue placeholder="选择等级" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="一级">一级</SelectItem>
-                        <SelectItem value="二级">二级</SelectItem>
-                        <SelectItem value="三级">三级</SelectItem>
+                        <SelectItem value="1级">1级</SelectItem>
+                        <SelectItem value="2级">2级</SelectItem>
+                        <SelectItem value="3级">3级</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
+                </div>
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="temperature" className="text-right">
+                    温度 (°C)
+                  </Label>
+                  <Input
+                    id="temperature"
+                    type="number"
+                    step="0.1"
+                    value={formData.temperature}
+                    onChange={(e) => setFormData({ ...formData, temperature: e.target.value })}
+                    placeholder="例如：25.5"
+                    className="col-span-3"
+                    required
+                  />
+                </div>
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="humidity" className="text-right">
+                    湿度 (%)
+                  </Label>
+                  <Input
+                    id="humidity"
+                    type="number"
+                    step="0.1"
+                    value={formData.humidity}
+                    onChange={(e) => setFormData({ ...formData, humidity: e.target.value })}
+                    placeholder="例如：13.5"
+                    className="col-span-3"
+                    required
+                  />
                 </div>
                 <div className="grid grid-cols-4 items-center gap-4">
                   <Label htmlFor="weight" className="text-right">
@@ -246,7 +284,9 @@ export default function LocationsPage() {
               <TableHead>地点名称</TableHead>
               <TableHead>管理员</TableHead>
               <TableHead>存储作物</TableHead>
-              <TableHead>质量等级</TableHead>
+              <TableHead>杂质等级</TableHead>
+              <TableHead>温度 (°C)</TableHead>
+              <TableHead>湿度 (%)</TableHead>
               <TableHead>重量 (吨)</TableHead>
               <TableHead>备注</TableHead>
             </TableRow>
@@ -254,7 +294,7 @@ export default function LocationsPage() {
           <TableBody>
             {loading ? (
               <TableRow>
-                <TableCell colSpan={6} className="h-24 text-center">
+                <TableCell colSpan={8} className="h-24 text-center">
                   <div className="flex items-center justify-center space-x-2">
                     <Loader2 className="h-5 w-5 animate-spin text-primary" />
                     <span>加载地点数据...</span>
@@ -270,14 +310,24 @@ export default function LocationsPage() {
                   </TableCell>
                   <TableCell>{location.admin_name}</TableCell>
                   <TableCell>{location.crop_type === 'rice' ? '水稻' : '小麦'}</TableCell>
-                  <TableCell>{location.grain_quality}</TableCell>
+                  <TableCell>
+                    <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
+                      location.impurity_grade === '1级' ? 'bg-green-100 text-green-800' :
+                      location.impurity_grade === '2级' ? 'bg-yellow-100 text-yellow-800' :
+                      'bg-red-100 text-red-800'
+                    }`}>
+                      {location.impurity_grade}
+                    </span>
+                  </TableCell>
+                  <TableCell>{location.temperature}°C</TableCell>
+                  <TableCell>{location.humidity}%</TableCell>
                   <TableCell>{location.grain_weight}</TableCell>
                   <TableCell className="max-w-[200px] truncate">{location.remarks || '-'}</TableCell>
                 </TableRow>
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={6} className="h-24 text-center text-muted-foreground">
+                <TableCell colSpan={8} className="h-24 text-center text-muted-foreground">
                   暂无存储地点，请点击右上角添加
                 </TableCell>
               </TableRow>

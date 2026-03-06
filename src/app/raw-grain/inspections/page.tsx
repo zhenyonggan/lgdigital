@@ -38,8 +38,10 @@ interface Inspection {
   date: string;
   location_id: string;
   inspector_name: string;
-  grain_quality: string;
+  impurity_grade: string;
   grain_weight: number;
+  temperature: number;
+  humidity: number;
   created_at: string;
   storage_locations?: {
     name: string;
@@ -65,8 +67,10 @@ export default function InspectionsPage() {
     date: new Date().toISOString().split('T')[0],
     location_id: "",
     inspector_name: "",
-    grain_quality: "一级",
-    grain_weight: ""
+    impurity_grade: "1级",
+    grain_weight: "",
+    temperature: "",
+    humidity: ""
   });
 
   // 获取数据
@@ -129,8 +133,10 @@ export default function InspectionsPage() {
             date: formData.date,
             location_id: formData.location_id,
             inspector_name: formData.inspector_name,
-            grain_quality: formData.grain_quality,
-            grain_weight: parseFloat(formData.grain_weight) || 0
+            impurity_grade: formData.impurity_grade,
+            grain_weight: parseFloat(formData.grain_weight) || 0,
+            temperature: parseFloat(formData.temperature) || 0,
+            humidity: parseFloat(formData.humidity) || 0
           }
         ]);
 
@@ -142,8 +148,10 @@ export default function InspectionsPage() {
         date: new Date().toISOString().split('T')[0],
         location_id: "",
         inspector_name: "",
-        grain_quality: "一级",
-        grain_weight: ""
+        impurity_grade: "1级",
+        grain_weight: "",
+        temperature: "",
+        humidity: ""
       });
     } catch (error) {
       console.error('Error adding inspection:', error);
@@ -230,25 +238,53 @@ export default function InspectionsPage() {
                 </div>
                 <div className="grid grid-cols-4 items-center gap-4">
                   <Label htmlFor="quality" className="text-right">
-                    质量结果
+                    杂质等级
                   </Label>
                   <div className="col-span-3">
                     <Select 
-                      value={formData.grain_quality} 
-                      onValueChange={(value) => setFormData({ ...formData, grain_quality: value })}
+                      value={formData.impurity_grade} 
+                      onValueChange={(value) => setFormData({ ...formData, impurity_grade: value })}
                     >
                       <SelectTrigger>
-                        <SelectValue placeholder="选择结果" />
+                        <SelectValue placeholder="选择等级" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="一级">一级（合格）</SelectItem>
-                        <SelectItem value="二级">二级（合格）</SelectItem>
-                        <SelectItem value="三级">三级（合格）</SelectItem>
-                        <SelectItem value="需整改">需整改</SelectItem>
-                        <SelectItem value="不合格">不合格</SelectItem>
+                        <SelectItem value="1级">1级</SelectItem>
+                        <SelectItem value="2级">2级</SelectItem>
+                        <SelectItem value="3级">3级</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
+                </div>
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="temperature" className="text-right">
+                    温度 (°C)
+                  </Label>
+                  <Input
+                    id="temperature"
+                    type="number"
+                    step="0.1"
+                    value={formData.temperature}
+                    onChange={(e) => setFormData({ ...formData, temperature: e.target.value })}
+                    placeholder="例如：25.5"
+                    className="col-span-3"
+                    required
+                  />
+                </div>
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="humidity" className="text-right">
+                    湿度 (%)
+                  </Label>
+                  <Input
+                    id="humidity"
+                    type="number"
+                    step="0.1"
+                    value={formData.humidity}
+                    onChange={(e) => setFormData({ ...formData, humidity: e.target.value })}
+                    placeholder="例如：13.5"
+                    className="col-span-3"
+                    required
+                  />
                 </div>
                 <div className="grid grid-cols-4 items-center gap-4">
                   <Label htmlFor="weight" className="text-right">
@@ -291,14 +327,16 @@ export default function InspectionsPage() {
               <TableHead>日期</TableHead>
               <TableHead>地点</TableHead>
               <TableHead>巡查员</TableHead>
-              <TableHead>质量结果</TableHead>
+              <TableHead>杂质等级</TableHead>
+              <TableHead>温度 (°C)</TableHead>
+              <TableHead>湿度 (%)</TableHead>
               <TableHead>重量核查 (吨)</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {loading ? (
               <TableRow>
-                <TableCell colSpan={5} className="h-24 text-center">
+                <TableCell colSpan={7} className="h-24 text-center">
                   <div className="flex items-center justify-center space-x-2">
                     <Loader2 className="h-5 w-5 animate-spin text-primary" />
                     <span>加载记录...</span>
@@ -316,19 +354,21 @@ export default function InspectionsPage() {
                   <TableCell>{inspection.inspector_name}</TableCell>
                   <TableCell>
                     <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
-                      inspection.grain_quality.includes('合格') || inspection.grain_quality.includes('级') 
-                        ? 'bg-green-100 text-green-800' 
-                        : 'bg-red-100 text-red-800'
+                      inspection.impurity_grade === '1级' ? 'bg-green-100 text-green-800' :
+                      inspection.impurity_grade === '2级' ? 'bg-yellow-100 text-yellow-800' :
+                      'bg-red-100 text-red-800'
                     }`}>
-                      {inspection.grain_quality}
+                      {inspection.impurity_grade}
                     </span>
                   </TableCell>
+                  <TableCell>{inspection.temperature}°C</TableCell>
+                  <TableCell>{inspection.humidity}%</TableCell>
                   <TableCell>{inspection.grain_weight}</TableCell>
                 </TableRow>
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={5} className="h-24 text-center text-muted-foreground">
+                <TableCell colSpan={7} className="h-24 text-center text-muted-foreground">
                   暂无巡查记录，请点击新增
                 </TableCell>
               </TableRow>

@@ -21,7 +21,7 @@ interface DashboardStats {
   totalWeight: number;
   locationCount: number;
   totalInspections: number;
-  recentQuality: string;
+  recentImpurity: string;
 }
 
 interface ChartData {
@@ -36,7 +36,7 @@ export default function RawGrainDashboard() {
     totalWeight: 0,
     locationCount: 0,
     totalInspections: 0,
-    recentQuality: '-',
+    recentImpurity: '-',
   });
   const [chartData, setChartData] = useState<ChartData[]>([]);
 
@@ -46,7 +46,7 @@ export default function RawGrainDashboard() {
       // 1. 获取存储地点统计 (总重量、地点数量)
       const { data: locations, error: locError } = await supabase
         .from('storage_locations')
-        .select('grain_weight, grain_quality')
+        .select('grain_weight, impurity_grade')
         .eq('crop_type', crop);
 
       if (locError) throw locError;
@@ -54,13 +54,13 @@ export default function RawGrainDashboard() {
       const totalWeight = locations?.reduce((sum, loc) => sum + (loc.grain_weight || 0), 0) || 0;
       const locationCount = locations?.length || 0;
       
-      // 简单的众数算法计算“主要质量”
-      const qualityCounts: Record<string, number> = {};
+      // 简单的众数算法计算“主要杂质等级”
+      const impurityCounts: Record<string, number> = {};
       locations?.forEach(loc => {
-        const q = loc.grain_quality || '未知';
-        qualityCounts[q] = (qualityCounts[q] || 0) + 1;
+        const q = loc.impurity_grade || '未知';
+        impurityCounts[q] = (impurityCounts[q] || 0) + 1;
       });
-      const recentQuality = Object.entries(qualityCounts).sort((a, b) => b[1] - a[1])[0]?.[0] || '-';
+      const recentImpurity = Object.entries(impurityCounts).sort((a, b) => b[1] - a[1])[0]?.[0] || '-';
 
       // 2. 获取巡查记录统计 (总次数、图表数据)
       // 获取最近30天的记录
@@ -103,7 +103,7 @@ export default function RawGrainDashboard() {
         totalWeight,
         locationCount,
         totalInspections,
-        recentQuality
+        recentImpurity
       });
       setChartData(chartDataArray);
 
@@ -161,11 +161,11 @@ export default function RawGrainDashboard() {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">主要质量等级</CardTitle>
+            <CardTitle className="text-sm font-medium">主要杂质等级</CardTitle>
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats.recentQuality}</div>
+            <div className="text-2xl font-bold">{stats.recentImpurity}</div>
             <p className="text-xs text-muted-foreground">基于当前库存分布</p>
           </CardContent>
         </Card>
