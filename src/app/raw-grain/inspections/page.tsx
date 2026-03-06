@@ -97,6 +97,8 @@ export default function InspectionsPage() {
       setInspections(data || []);
     } catch (error) {
       console.error('Error fetching inspections:', error);
+      // 在生产环境中，如果关联查询失败（如外键问题），尝试降级为空列表，避免白屏
+      setInspections([]); 
     } finally {
       setLoading(false);
     }
@@ -349,9 +351,11 @@ export default function InspectionsPage() {
                     {inspection.date}
                   </TableCell>
                   <TableCell>
-                    {inspection.storage_locations?.planting_subject 
-                      ? `${inspection.storage_locations.planting_subject} - ${inspection.storage_locations.name}` 
-                      : (inspection.storage_locations?.name || '未知地点')}
+                    {inspection.storage_locations ? (
+                      inspection.storage_locations.planting_subject 
+                        ? `${inspection.storage_locations.planting_subject} - ${inspection.storage_locations.name}` 
+                        : inspection.storage_locations.name
+                    ) : '未知地点'}
                   </TableCell>
                   <TableCell>{inspection.inspector_name}</TableCell>
                   <TableCell>{inspection.impurity_grade}%</TableCell>
