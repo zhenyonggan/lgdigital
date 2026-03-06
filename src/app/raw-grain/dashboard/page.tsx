@@ -21,7 +21,7 @@ interface DashboardStats {
   totalWeight: number;
   locationCount: number;
   totalInspections: number;
-  recentImpurity: string;
+  avgImpurity: string;
 }
 
 interface ChartData {
@@ -36,7 +36,7 @@ export default function RawGrainDashboard() {
     totalWeight: 0,
     locationCount: 0,
     totalInspections: 0,
-    recentImpurity: '-',
+    avgImpurity: '-',
   });
   const [chartData, setChartData] = useState<ChartData[]>([]);
 
@@ -54,13 +54,9 @@ export default function RawGrainDashboard() {
       const totalWeight = locations?.reduce((sum, loc) => sum + (loc.grain_weight || 0), 0) || 0;
       const locationCount = locations?.length || 0;
       
-      // 简单的众数算法计算“主要杂质等级”
-      const impurityCounts: Record<string, number> = {};
-      locations?.forEach(loc => {
-        const q = loc.impurity_grade || '未知';
-        impurityCounts[q] = (impurityCounts[q] || 0) + 1;
-      });
-      const recentImpurity = Object.entries(impurityCounts).sort((a, b) => b[1] - a[1])[0]?.[0] || '-';
+      // 计算平均杂质
+      const totalImpurity = locations?.reduce((sum, loc) => sum + (parseFloat(loc.impurity_grade) || 0), 0) || 0;
+      const avgImpurity = locationCount > 0 ? (totalImpurity / locationCount).toFixed(2) + '%' : '-';
 
       // 2. 获取巡查记录统计 (总次数、图表数据)
       // 获取最近30天的记录
@@ -103,7 +99,7 @@ export default function RawGrainDashboard() {
         totalWeight,
         locationCount,
         totalInspections,
-        recentImpurity
+        avgImpurity
       });
       setChartData(chartDataArray);
 
@@ -161,12 +157,12 @@ export default function RawGrainDashboard() {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">主要杂质等级</CardTitle>
+            <CardTitle className="text-sm font-medium">平均杂质率</CardTitle>
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats.recentImpurity}</div>
-            <p className="text-xs text-muted-foreground">基于当前库存分布</p>
+            <div className="text-2xl font-bold">{stats.avgImpurity}</div>
+            <p className="text-xs text-muted-foreground">基于当前库存</p>
           </CardContent>
         </Card>
 

@@ -35,10 +35,11 @@ import { Loader2, Plus, Warehouse } from 'lucide-react';
 
 interface Location {
   id: string;
+  planting_subject: string;
   name: string;
   admin_name: string;
   crop_type: string;
-  impurity_grade: string;
+  impurity_grade: number;
   grain_weight: number;
   temperature: number;
   humidity: number;
@@ -55,9 +56,10 @@ export default function LocationsPage() {
 
   // 表单状态
   const [formData, setFormData] = useState({
+    planting_subject: "",
     name: "",
     admin_name: "",
-    impurity_grade: "一级",
+    impurity_grade: "",
     grain_weight: "",
     temperature: "",
     humidity: "",
@@ -97,10 +99,11 @@ export default function LocationsPage() {
         .from('storage_locations') // Changed table name
         .insert([
           {
+            planting_subject: formData.planting_subject,
             name: formData.name,
             admin_name: formData.admin_name,
             crop_type: crop,
-            impurity_grade: formData.impurity_grade,
+            impurity_grade: parseFloat(formData.impurity_grade) || 0,
             grain_weight: parseFloat(formData.grain_weight) || 0,
             temperature: parseFloat(formData.temperature) || 0,
             humidity: parseFloat(formData.humidity) || 0,
@@ -113,17 +116,18 @@ export default function LocationsPage() {
       await fetchLocations();
       setIsDialogOpen(false);
       setFormData({
+        planting_subject: "",
         name: "",
         admin_name: "",
-        impurity_grade: "一级",
+        impurity_grade: "",
         grain_weight: "",
         temperature: "",
         humidity: "",
         remarks: ""
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error adding location:', error);
-      alert('添加失败，请重试');
+      alert('添加失败：' + (error.message || '请重试'));
     } finally {
       setIsSubmitting(false);
     }
@@ -156,8 +160,21 @@ export default function LocationsPage() {
             <form onSubmit={handleSubmit}>
               <div className="grid gap-4 py-4">
                 <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="planting_subject" className="text-right">
+                    种植主体
+                  </Label>
+                  <Input
+                    id="planting_subject"
+                    value={formData.planting_subject}
+                    onChange={(e) => setFormData({ ...formData, planting_subject: e.target.value })}
+                    placeholder="例如：XX合作社"
+                    className="col-span-3"
+                    required
+                  />
+                </div>
+                <div className="grid grid-cols-4 items-center gap-4">
                   <Label htmlFor="name" className="text-right">
-                    地点名称
+                    暂存点名称
                   </Label>
                   <Input
                     id="name"
@@ -185,21 +202,16 @@ export default function LocationsPage() {
                   <Label htmlFor="impurity" className="text-right">
                     杂质等级
                   </Label>
-                  <div className="col-span-3">
-                    <Select 
-                      value={formData.impurity_grade} 
-                      onValueChange={(value) => setFormData({ ...formData, impurity_grade: value })}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="选择等级" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="1级">1级</SelectItem>
-                        <SelectItem value="2级">2级</SelectItem>
-                        <SelectItem value="3级">3级</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
+                  <Input
+                    id="impurity"
+                    type="number"
+                    step="0.1"
+                    value={formData.impurity_grade}
+                    onChange={(e) => setFormData({ ...formData, impurity_grade: e.target.value })}
+                    placeholder="例如：1.5"
+                    className="col-span-3"
+                    required
+                  />
                 </div>
                 <div className="grid grid-cols-4 items-center gap-4">
                   <Label htmlFor="temperature" className="text-right">
@@ -281,7 +293,8 @@ export default function LocationsPage() {
           <TableCaption>存储地点列表</TableCaption>
           <TableHeader>
             <TableRow>
-              <TableHead>地点名称</TableHead>
+              <TableHead>种植主体</TableHead>
+              <TableHead>暂存点名称</TableHead>
               <TableHead>管理员</TableHead>
               <TableHead>存储作物</TableHead>
               <TableHead>杂质等级</TableHead>
@@ -294,7 +307,7 @@ export default function LocationsPage() {
           <TableBody>
             {loading ? (
               <TableRow>
-                <TableCell colSpan={8} className="h-24 text-center">
+                <TableCell colSpan={9} className="h-24 text-center">
                   <div className="flex items-center justify-center space-x-2">
                     <Loader2 className="h-5 w-5 animate-spin text-primary" />
                     <span>加载地点数据...</span>
@@ -304,21 +317,14 @@ export default function LocationsPage() {
             ) : locations.length > 0 ? (
               locations.map((location) => (
                 <TableRow key={location.id}>
+                  <TableCell>{location.planting_subject}</TableCell>
                   <TableCell className="font-medium flex items-center gap-2">
                     <Warehouse className="h-4 w-4 text-muted-foreground" />
                     {location.name}
                   </TableCell>
                   <TableCell>{location.admin_name}</TableCell>
                   <TableCell>{location.crop_type === 'rice' ? '水稻' : '小麦'}</TableCell>
-                  <TableCell>
-                    <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
-                      location.impurity_grade === '1级' ? 'bg-green-100 text-green-800' :
-                      location.impurity_grade === '2级' ? 'bg-yellow-100 text-yellow-800' :
-                      'bg-red-100 text-red-800'
-                    }`}>
-                      {location.impurity_grade}
-                    </span>
-                  </TableCell>
+                  <TableCell>{location.impurity_grade}%</TableCell>
                   <TableCell>{location.temperature}°C</TableCell>
                   <TableCell>{location.humidity}%</TableCell>
                   <TableCell>{location.grain_weight}</TableCell>
@@ -327,7 +333,7 @@ export default function LocationsPage() {
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={8} className="h-24 text-center text-muted-foreground">
+                <TableCell colSpan={9} className="h-24 text-center text-muted-foreground">
                   暂无存储地点，请点击右上角添加
                 </TableCell>
               </TableRow>

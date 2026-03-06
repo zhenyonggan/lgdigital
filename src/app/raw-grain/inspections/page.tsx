@@ -38,19 +38,21 @@ interface Inspection {
   date: string;
   location_id: string;
   inspector_name: string;
-  impurity_grade: string;
+  impurity_grade: number;
   grain_weight: number;
   temperature: number;
   humidity: number;
   created_at: string;
   storage_locations?: {
     name: string;
+    planting_subject: string;
     crop_type: string;
   };
 }
 
 interface Location {
   id: string;
+  planting_subject: string;
   name: string;
 }
 
@@ -67,7 +69,7 @@ export default function InspectionsPage() {
     date: new Date().toISOString().split('T')[0],
     location_id: "",
     inspector_name: "",
-    impurity_grade: "1级",
+    impurity_grade: "",
     grain_weight: "",
     temperature: "",
     humidity: ""
@@ -84,6 +86,7 @@ export default function InspectionsPage() {
           *,
           storage_locations!inner (
             name,
+            planting_subject,
             crop_type
           )
         `)
@@ -104,7 +107,7 @@ export default function InspectionsPage() {
     try {
       const { data, error } = await supabase
         .from('storage_locations')
-        .select('id, name')
+        .select('id, name, planting_subject')
         .eq('crop_type', crop)
         .order('name');
 
@@ -133,7 +136,7 @@ export default function InspectionsPage() {
             date: formData.date,
             location_id: formData.location_id,
             inspector_name: formData.inspector_name,
-            impurity_grade: formData.impurity_grade,
+            impurity_grade: parseFloat(formData.impurity_grade) || 0,
             grain_weight: parseFloat(formData.grain_weight) || 0,
             temperature: parseFloat(formData.temperature) || 0,
             humidity: parseFloat(formData.humidity) || 0
@@ -148,14 +151,14 @@ export default function InspectionsPage() {
         date: new Date().toISOString().split('T')[0],
         location_id: "",
         inspector_name: "",
-        impurity_grade: "1级",
+        impurity_grade: "",
         grain_weight: "",
         temperature: "",
         humidity: ""
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error adding inspection:', error);
-      alert('添加失败，请重试');
+      alert('添加失败：' + (error.message || '请重试'));
     } finally {
       setIsSubmitting(false);
     }
@@ -216,7 +219,7 @@ export default function InspectionsPage() {
                       <SelectContent>
                         {locations.map((loc) => (
                           <SelectItem key={loc.id} value={loc.id}>
-                            {loc.name}
+                            {loc.planting_subject ? `${loc.planting_subject} - ${loc.name}` : loc.name}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -240,21 +243,16 @@ export default function InspectionsPage() {
                   <Label htmlFor="quality" className="text-right">
                     杂质等级
                   </Label>
-                  <div className="col-span-3">
-                    <Select 
-                      value={formData.impurity_grade} 
-                      onValueChange={(value) => setFormData({ ...formData, impurity_grade: value })}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="选择等级" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="1级">1级</SelectItem>
-                        <SelectItem value="2级">2级</SelectItem>
-                        <SelectItem value="3级">3级</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
+                  <Input
+                    id="quality"
+                    type="number"
+                    step="0.1"
+                    value={formData.impurity_grade}
+                    onChange={(e) => setFormData({ ...formData, impurity_grade: e.target.value })}
+                    placeholder="例如：1.5"
+                    className="col-span-3"
+                    required
+                  />
                 </div>
                 <div className="grid grid-cols-4 items-center gap-4">
                   <Label htmlFor="temperature" className="text-right">
@@ -350,17 +348,13 @@ export default function InspectionsPage() {
                     <CalendarCheck className="h-4 w-4 text-muted-foreground" />
                     {inspection.date}
                   </TableCell>
-                  <TableCell>{inspection.storage_locations?.name || '未知地点'}</TableCell>
-                  <TableCell>{inspection.inspector_name}</TableCell>
                   <TableCell>
-                    <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
-                      inspection.impurity_grade === '1级' ? 'bg-green-100 text-green-800' :
-                      inspection.impurity_grade === '2级' ? 'bg-yellow-100 text-yellow-800' :
-                      'bg-red-100 text-red-800'
-                    }`}>
-                      {inspection.impurity_grade}
-                    </span>
+                    {inspection.storage_locations?.planting_subject 
+                      ? `${inspection.storage_locations.planting_subject} - ${inspection.storage_locations.name}` 
+                      : (inspection.storage_locations?.name || '未知地点')}
                   </TableCell>
+                  <TableCell>{inspection.inspector_name}</TableCell>
+                  <TableCell>{inspection.impurity_grade}%</TableCell>
                   <TableCell>{inspection.temperature}°C</TableCell>
                   <TableCell>{inspection.humidity}%</TableCell>
                   <TableCell>{inspection.grain_weight}</TableCell>
